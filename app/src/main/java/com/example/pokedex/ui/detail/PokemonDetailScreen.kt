@@ -17,6 +17,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -27,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.capitalize
 import androidx.compose.ui.text.intl.Locale
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -34,10 +36,12 @@ import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.pokedex.data.model.PokemonDetail
+import com.example.pokedex.data.model.Sprites
+import com.example.pokedex.data.model.TypeInfo
+import com.example.pokedex.data.model.TypeSlot
+import com.example.pokedex.ui.theme.PokeDexTheme
 
 
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PokemonDetailScreen(
     pokemonId: Int,
@@ -50,6 +54,18 @@ fun PokemonDetailScreen(
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    PokemonDetailScreenContent(
+        uiState = uiState,
+        onBackClick = onBackClick
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PokemonDetailScreenContent(
+    uiState: PokemonDetailViewModel.UiState,
+    onBackClick: () -> Unit
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -58,36 +74,38 @@ fun PokemonDetailScreen(
                     IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Tælbasjat"
+                            contentDescription = "Back"
                         )
                     }
                 }
             )
         }
     ) { innerPadding ->
-        Box(
+        Surface(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .padding(innerPadding),
+            color = MaterialTheme.colorScheme.background
         ) {
-            when (val state = uiState) {
+            when (uiState) {
                 is PokemonDetailViewModel.UiState.Loading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                    )
+                    Box(contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
                 }
 
                 is PokemonDetailViewModel.UiState.Error -> {
-                    Text(
-                        text = "uffda, nå gikk det feil ja: ${state.message}",
-                        color = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.align(Alignment.Center)
-                    )
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(
+                            text = "Error: ${uiState.message}",
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
                 }
 
                 is PokemonDetailViewModel.UiState.Success -> {
-                    PokemonDetailContent(pokemon = state.pokemon)
+                    PokemonDetailContent(pokemon = uiState.pokemon)
                 }
             }
         }
@@ -161,5 +179,50 @@ private fun PokemonDetailContent(pokemon: PokemonDetail) {
                 )
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PokemonDetailScreenPreview() {
+    PokeDexTheme {
+        PokemonDetailScreenContent(
+            uiState = PokemonDetailViewModel.UiState.Success(
+                pokemon = PokemonDetail(
+                    id = 1,
+                    name = "bulbasaur",
+                    height = 7,
+                    weight = 69,
+                    sprites = Sprites("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png"),
+                    types = listOf(
+                        TypeSlot(TypeInfo("grass")),
+                        TypeSlot(TypeInfo("poison"))
+                    )
+                )
+            ),
+            onBackClick = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PokemonDetailScreenLoadingPreview() {
+    PokeDexTheme {
+        PokemonDetailScreenContent(
+            uiState = PokemonDetailViewModel.UiState.Loading,
+            onBackClick = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PokemonDetailScreenErrorPreview() {
+    PokeDexTheme {
+        PokemonDetailScreenContent(
+            uiState = PokemonDetailViewModel.UiState.Error("Failed to load Pokemon"),
+            onBackClick = {}
+        )
     }
 }

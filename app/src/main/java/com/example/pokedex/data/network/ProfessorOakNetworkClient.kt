@@ -36,3 +36,4 @@ class  ProfessorOakNetworkClient  @Inject constructor() {
 
     val apiService: PokemonApiService = retrofit.create(PokemonApiService::class.java)
 }
+
